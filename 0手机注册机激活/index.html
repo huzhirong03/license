@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>激活码生成器</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 密码保护层 -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <h2>🔐 请输入访问密码</h2>
+            <p class="hint">提示：大宝</p>
+            <input type="password" id="passwordInput" placeholder="请输入密码" autofocus>
+            <button onclick="checkPassword()">进入</button>
+            <p id="loginError" class="error"></p>
+        </div>
+    </div>
+
+    <!-- 主界面（密码验证后显示） -->
+    <div id="mainScreen" class="main-screen" style="display: none;">
+        <div class="container">
+            <h1>🔑 激活码生成器</h1>
+            <p class="warning">⚠️ 此工具仅供管理员使用，请勿分享！</p>
+
+            <!-- 选择程序 -->
+            <div class="form-group">
+                <label>选择程序：</label>
+                <select id="programSelect">
+                    <option value="R2V">矢量转换工具</option>
+                    <option value="VBA_TOOL" disabled>宏嫖边工具（开发中）</option>
+                    <!-- 以后添加更多程序 -->
+                </select>
+            </div>
+
+            <!-- 机器码输入 -->
+            <div class="form-group">
+                <label>用户机器码：</label>
+                <input type="text" id="machineCode" placeholder="例如：ABCD-1234-5678-EFGH">
+            </div>
+
+            <!-- 激活类型 -->
+            <div class="form-group">
+                <label>激活时长：</label>
+                <select id="licenseType">
+                    <option value="M1">1分钟（测试用）</option>
+                    <option value="M30">1个月</option>
+                    <option value="Y1">1年</option>
+                    <option value="PERM" selected>永久</option>
+                </select>
+            </div>
+
+            <!-- 生成按钮 -->
+            <button class="generate-btn" onclick="generateLicense()">生成激活码</button>
+
+            <!-- 结果显示 -->
+            <div id="resultArea" class="result-area" style="display: none;">
+                <label>激活码（发给用户）：</label>
+                <div class="result-box">
+                    <input type="text" id="licenseResult" readonly>
+                    <button class="copy-btn" onclick="copyLicense()">复制</button>
+                </div>
+                <p id="licenseInfo" class="license-info"></p>
+            </div>
+
+            <!-- 使用说明 -->
+            <div class="help-section">
+                <h3>📖 使用说明</h3>
+                <ol>
+                    <li>选择要激活的程序</li>
+                    <li>输入用户提供的机器码（16位，格式：XXXX-XXXX-XXXX-XXXX）</li>
+                    <li>选择激活时长</li>
+                    <li>点击"生成激活码"</li>
+                    <li>将激活码发送给用户</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/generator.js"></script>
+</body>
+</html>
+
