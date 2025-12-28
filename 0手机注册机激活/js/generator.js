@@ -1,37 +1,59 @@
 /**
- * 激活码生成器 - JavaScript 版本
+ * 激活码生成器 - JavaScript 版本 v2.0
+ * 
+ * 支持程序：
+ * 1. R2V 矢量转换工具（SHA256 + MD5）
+ * 2. VBA 宏嫖边工具（自定义 SimpleHash）
  * 
  * 注意：此代码仅供管理员使用，请勿分享！
  */
 
 // ==================== 配置区域 ====================
 
-// 访问密码（加密存储）
+// 访问密码
 const ACCESS_PASSWORD = '150904';
 
 // 密钥（与各程序保持一致）
-const SECRET_KEY = 'fage_laser_2024_secret_key_do_not_share';
+const SECRET_KEYS = {
+    'R2V': 'fage_laser_2024_secret_key_do_not_share',
+    'VBA_TOOL': 'fage_cdr_plugin_2024_vba_key'
+};
 
 // 程序列表
 const PROGRAMS = {
     'R2V': {
-        name: '矢量转换工具',
+        name: '矢量转换工具 (R2V)',
         enabled: true
     },
     'VBA_TOOL': {
-        name: '宏嫖边工具',
-        enabled: false  // 开发中
+        name: '宏嫖边工具 (VBA插件)',
+        enabled: true
     }
-    // 以后添加更多程序
 };
 
-// 激活类型
-const LICENSE_TYPES = {
-    'M1': { name: '1分钟', days: 1/1440 },
-    'M30': { name: '1个月', days: 30 },
-    'Y1': { name: '1年', days: 365 },
-    'PERM': { name: '永久', days: 36500 }
+// R2V 激活类型
+const R2V_LICENSE_TYPES = {
+    'M1': { name: '1分钟（测试用）', code: 'M1' },
+    'M30': { name: '1个月', code: 'M30' },
+    'Y1': { name: '1年', code: 'Y1' },
+    'PERM': { name: '永久', code: 'PERM' }
 };
+
+// VBA插件 激活类型
+const VBA_LICENSE_TYPES = {
+    'PERM': { name: '永久', code: 'PERM' },
+    'Y365': { name: '1年（365天）', code: 'Y365' },
+    'M030': { name: '1个月（30天）', code: 'M030' },
+    'D001': { name: '1天', code: 'D001' },
+    'S010': { name: '10秒（测试用）', code: 'S010' }
+};
+
+// ==================== 工具函数 ====================
+
+// 生成4位随机盐值（十六进制）
+function generateSalt() {
+    return Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+}
 
 // ==================== 密码验证 ====================
 
@@ -42,7 +64,6 @@ function checkPassword() {
     if (input === ACCESS_PASSWORD) {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainScreen').style.display = 'block';
-        // 保存登录状态（当前会话）
         sessionStorage.setItem('authenticated', 'true');
     } else {
         errorElement.textContent = '密码错误，请重试';
@@ -64,7 +85,37 @@ window.onload = function() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainScreen').style.display = 'block';
     }
+    // 初始化激活类型列表
+    updateLicenseTypeOptions();
 };
+
+// ==================== 程序切换处理 ====================
+
+function updateLicenseTypeOptions() {
+    const programCode = document.getElementById('programSelect').value;
+    const licenseTypeSelect = document.getElementById('licenseType');
+    
+    // 清空现有选项
+    licenseTypeSelect.innerHTML = '';
+    
+    // 根据程序类型加载对应的激活类型
+    let types;
+    if (programCode === 'R2V') {
+        types = R2V_LICENSE_TYPES;
+    } else {
+        types = VBA_LICENSE_TYPES;
+    }
+    
+    for (const [code, info] of Object.entries(types)) {
+        const option = document.createElement('option');
+        option.value = code;
+        option.textContent = info.name;
+        if (code === 'PERM') {
+            option.selected = true;
+        }
+        licenseTypeSelect.appendChild(option);
+    }
+}
 
 // ==================== SHA256 实现 ====================
 
@@ -231,30 +282,95 @@ function md5(string) {
     return hex(md51(string)).toUpperCase();
 }
 
+// ==================== VBA插件专用 SimpleHash ====================
+
+/**
+ * VBA插件使用的自定义哈希算法
+ * 与 ActivationModule.bas 中的 SimpleHash 函数完全一致
+ */
+function simpleHash(inputStr) {
+    // 初始化哈希种子（与VBA完全一致）
+    let h1 = 5381;
+    let h2 = 5387;
+    let h3 = 5393;
+    let h4 = 5399;
+    
+    // 遍历每个字符进行哈希计算
+    for (let i = 0; i < inputStr.length; i++) {
+        const c = inputStr.charCodeAt(i);
+        
+        // 先限制范围再乘法，与VBA完全一致
+        h1 = ((h1 & 0xFFFF) * 33 + c) & 0x7FFFFFFF;
+        h2 = ((h2 & 0xFFFF) * 37 + c) & 0x7FFFFFFF;
+        h3 = ((h3 & 0xFFFF) * 41 + c) & 0x7FFFFFFF;
+        h4 = ((h4 & 0xFFFF) * 43 + c) & 0x7FFFFFFF;
+    }
+    
+    // 组合结果
+    const result = 
+        (h1 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0') +
+        (h2 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0') +
+        (h3 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0') +
+        (h4 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+    
+    return result;
+}
+
+/**
+ * 格式化为 XXXX-XXXX-XXXX-XXXX
+ */
+function formatCode(code) {
+    let clean = code.replace(/-/g, '').toUpperCase();
+    
+    // 确保16位
+    if (clean.length < 16) {
+        clean = clean + '0'.repeat(16 - clean.length);
+    } else if (clean.length > 16) {
+        clean = clean.substring(0, 16);
+    }
+    
+    return `${clean.substring(0, 4)}-${clean.substring(4, 8)}-${clean.substring(8, 12)}-${clean.substring(12, 16)}`;
+}
+
 // ==================== 激活码生成 ====================
 
 async function generateLicense() {
     const programCode = document.getElementById('programSelect').value;
-    const machineCode = document.getElementById('machineCode').value.trim().toUpperCase();
+    const machineCode = document.getElementById('machineCode').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
     const typeCode = document.getElementById('licenseType').value;
+
+    // 更新输入框显示
+    document.getElementById('machineCode').value = machineCode;
 
     // 验证机器码格式
     const cleanCode = machineCode.replace(/-/g, '');
     if (cleanCode.length !== 16) {
-        alert('机器码格式不正确！\n应该是16位，格式：XXXX-XXXX-XXXX-XXXX');
+        alert(`机器码格式不正确！\n\n当前长度：${cleanCode.length} 位\n应该是：16 位\n\n格式示例：XXXX-XXXX-XXXX-XXXX`);
         return;
     }
 
-    // 生成激活码
-    // 公式：SHA256(机器码 + 类型代码 + SECRET_KEY)
-    const rawStr = machineCode + typeCode + SECRET_KEY;
-    const hashHex = await sha256(rawStr);
-    
-    // 生成类型标识（MD5的前4位）
-    const typeHash = md5(typeCode).substring(0, 4);
-    
-    // 格式化激活码
-    const licenseKey = `${hashHex.substring(0, 4)}-${hashHex.substring(4, 8)}-${hashHex.substring(8, 12)}-${typeHash}`;
+    let licenseKey;
+    const salt = generateSalt();
+
+    if (programCode === 'R2V') {
+        // R2V 激活码生成（SHA256 + MD5 + 盐值）
+        const secretKey = SECRET_KEYS['R2V'];
+        const rawStr = cleanCode + typeCode + salt + secretKey;
+        const hashHex = await sha256(rawStr);
+        const typeHash = md5(typeCode).substring(0, 4);
+        
+        // 格式：前8位哈希 + 4位类型哈希 + 4位盐值
+        licenseKey = `${hashHex.substring(0, 4)}-${hashHex.substring(4, 8)}-${typeHash}-${salt}`;
+    } else {
+        // VBA插件激活码生成（SimpleHash + 盐值）
+        const secretKey = SECRET_KEYS['VBA_TOOL'];
+        const rawData = `${cleanCode}|LICENSE|${secretKey}|${typeCode}|${salt}`;
+        const hash = simpleHash(rawData);
+        
+        // 激活码 = Hash前12位 + 盐值4位
+        const licenseCode = hash.substring(0, 12) + salt;
+        licenseKey = formatCode(licenseCode);
+    }
 
     // 显示结果
     document.getElementById('resultArea').style.display = 'block';
@@ -262,11 +378,13 @@ async function generateLicense() {
     
     // 显示激活信息
     const programName = PROGRAMS[programCode].name;
-    const typeName = LICENSE_TYPES[typeCode].name;
+    const types = programCode === 'R2V' ? R2V_LICENSE_TYPES : VBA_LICENSE_TYPES;
+    const typeName = types[typeCode].name;
     document.getElementById('licenseInfo').innerHTML = 
-        `程序：${programName}<br>` +
-        `类型：${typeName}<br>` +
-        `机器码：${machineCode}`;
+        `<strong>程序：</strong>${programName}<br>` +
+        `<strong>类型：</strong>${typeName}<br>` +
+        `<strong>机器码：</strong>${machineCode}<br>` +
+        `<span style="color: #3498db;">💡 每次点击生成都会产生新的激活码</span>`;
 }
 
 // ==================== 复制功能 ====================
@@ -274,13 +392,12 @@ async function generateLicense() {
 function copyLicense() {
     const licenseInput = document.getElementById('licenseResult');
     licenseInput.select();
-    licenseInput.setSelectionRange(0, 99999); // 移动端兼容
+    licenseInput.setSelectionRange(0, 99999);
 
     try {
         navigator.clipboard.writeText(licenseInput.value).then(() => {
             showCopySuccess();
         }).catch(() => {
-            // 降级方案
             document.execCommand('copy');
             showCopySuccess();
         });
@@ -300,4 +417,3 @@ function showCopySuccess() {
         btn.style.background = '#27ae60';
     }, 1500);
 }
-
