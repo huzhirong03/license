@@ -115,9 +115,19 @@ h1 {
     text-align: center;
     color: #ff6b6b;
     font-size: 13px;
-    margin-bottom: 25px;
+    margin-bottom: 10px;
     padding: 10px;
     background: rgba(255, 107, 107, 0.1);
+    border-radius: 8px;
+}
+
+.version-note {
+    text-align: center;
+    color: #27ae60;
+    font-size: 12px;
+    margin-bottom: 25px;
+    padding: 8px;
+    background: rgba(39, 174, 96, 0.1);
     border-radius: 8px;
 }
 
@@ -241,7 +251,28 @@ h1 {
     border-radius: 8px;
     font-size: 13px;
     color: #aaa;
-    text-align: center;
+    text-align: left;
+    line-height: 1.6;
+}
+
+/* 再次生成按钮 */
+.regen-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.regen-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(155, 89, 182, 0.4);
 }
 
 /* 帮助区域 */
@@ -290,4 +321,3 @@ h1 {
         width: 100%;
     }
 }
-
