@@ -1,0 +1,37 @@
+/**
+ * 密钥配置文件
+ * ⚠️ 重要：请将此文件中的密钥替换为您自己的密钥！
+ * 
+ * 如何获取密钥：
+ * 1. 在电脑上运行"证书生成器"程序
+ * 2. 找到 C:\Users\<用户名>\AppData\Local\FaGeR2V\keys\ 目录
+ * 3. 打开 private_key.xml 和 public_key.xml
+ * 4. 将内容粘贴到下面对应的变量中
+ */
+
+// ==================== 访问密码 ====================
+const ACCESS_PASSWORD = '150904';
+
+// ==================== AES 密钥（与 C# 版本一致）====================
+const LICENSE_FILE_KEY = 'FaGe2024LicenseKey!@#$%^&*()_+';
+const LICENSE_FILE_IV = 'FaGeLaser2024IV!';
+
+// ==================== Supabase 配置 ====================
+const SUPABASE_URL = 'https://cdvoeabekfuujaehxocl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkdm9lYWJla2Z1dWphZWh4b2NsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxNjM3MDQsImV4cCI6MjA4MTczOTcwNH0.VrT3fJfKKXwwOF_dx1v_vMkNm1bXIEhhL_4iui0RKB8';
+
+// ==================== RSA 私钥（XML格式）====================
+// ⚠️ 此文件包含私钥，请勿分享！
+const RSA_PRIVATE_KEY_XML = `<RSAKeyValue><Modulus>3dDMo1XJOQzvGNBdR4An3syRxggaHPCYQfn2XUo9uDyaN8lvvpGqLBKZRGX/LgKNmwm/hvLBO5lUluXywRhJlcE3EW/cnDabfKzslp+7/Z/p8t08tf+kuYawgtqSjZB3q3rtxEXT2McCGWY8welwqkpMDWdxWJvvk3pmM0tySJZPbC3TIHN/PEjmdXj3ZznqsjWE0Yae9/y0oB0yjQZl+dhpL2mUqfkiG0xfhTMkWTnEdaOMpDSPSEO/rXK8sHdrgbvbxcPtMm2p0N5Wdto/iuvTP/pMZ2rD9eDPPDGV2L6/2p6y/u0lu4l9L7HnX8EfrafgvdFimVt79EtJeCD0HQ==</Modulus><Exponent>AQAB</Exponent><P>/3QCRnTpTeMGsZsg1vXJEZ8hwZ/4zqSzNB9HYhfJBdXVDfq8wykGjMeULLcf/EECHUt3AqeXSKiiC+AbLt2mdGtgU7Dw2wqw62E33o2DCR5bwCkvE2Nls71UEw5ULiTZ9+p/PiGCzKmZVKlNjIs8DbUuCWGtlm/q7bsFeOd8LO8=</P><Q>3kpbU4TmAER7NFePIX3iL0AH3MnuSmOQmqCvV9YKnilbGI5Oirc2xll7CJZKZ4K1m3R+tsKSk6pqAef1nSHDKJuxYks2e7PZfW9M8JkMHejG5iBuSKsVngBgwt3ubApk2wFs/sy0ayjW/uHzEc02z8p17J2lTw9fEjZh+AdB7M=</Q><DP>a9ZYR2b/PkQChWNpX5VuhiPZSjXQANwCUpSJu90ynWYBhN8+ZFyjSTbPVHkR5ZlD3T4IRXSeJqwZjE3U69nh9O+HQl1HgBBpU1Q9E5RFpsnMDbjVCKg2/rmEDm9UFg60fTXe9UmMP/2wns7Bz/zPIzJDltYLEqiQUj9LNhjykL0=</DP><DQ>iB0uun71qZ5CabVcGl2Mc+5Xodl/vGwc3nuVO0j9MPaiOYCzlacdkkaG/Tm9qVtlOQT7cPxb3UcwVntxXoTxE0vwUZ56xWKKtdjsHN5YJM9oGwGOD/5oz3ohOs5vWU289dE/4lDbCD4NtsZQyD2i3sBY5gEK1KqO3SFfgO0x+D8=</DQ><InverseQ>mpVEE0l/qlVKUadPQPMYwYs/io0xM8DECdiA08e3INk/8pD+FgOYE+1petzAbJOsE3bxUh/1cRZ7Sq2QcgzdGNxH5a1ksgT8mTilNQs6YO5TK2kH9/4erTIlaC/IfIpzxzF+1uH/RgWBkFtkyTfpgYxUiWH7YFTQs3jtTUX1C1s=</InverseQ><D>CAxtgHe6Z3GKs3HMEK4bxD/UAkWE/QvV2n8Ba30oJCk+x0tt3JJYhGTgXtT8n2TEUp3V70WbsVepl2KUnmENOnvaTa2raZepqKp1nwQAxEErMf7JFymBhqHHWgckAjFZzoStCuV53Q2RlNRq6laZpcaRkghAA0uBFnypPzwiryupn/ZCSok5O4Zwe7p/wcFH644eJArWNHJeu76TdeJlU5NDOLBC5qwv6x+b4XX7QNwqtQEhg7SzyLtXxR2lVl/y2nyl2JO8RFy+1iCborCkhTDPU/yYXl8y3wr7Kge8Ck2wVib2NfCfbp9dTjK5YFdSVR8AVlriQfS7fNcQYFx+12Q==</D></RSAKeyValue>`;
+
+// ==================== 授权类型配置 ====================
+const LICENSE_TYPES = {
+    'D1': { name: '1天（测试）', days: 1 },
+    'D7': { name: '7天', days: 7 },
+    'M30': { name: '1个月', days: 30 },
+    'M90': { name: '3个月', days: 90 },
+    'Y1': { name: '1年', days: 365 },
+    'PERM': { name: '永久', days: 0 },
+    'CUSTOM': { name: '自定义', days: -1 }
+};
+
