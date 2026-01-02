@@ -213,6 +213,21 @@ h1 {
 .result-box {
     display: flex;
     gap: 10px;
+    flex-direction: column;
+}
+
+.result-box textarea {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #27ae60;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #27ae60;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    resize: none;
+    word-break: break-all;
 }
 
 .result-box input {
@@ -226,6 +241,25 @@ h1 {
     font-family: 'Courier New', monospace;
     font-weight: bold;
     text-align: center;
+}
+
+.type-row {
+    display: flex;
+    align-items: center;
+}
+
+.type-row select {
+    flex: 1;
+}
+
+.type-row input {
+    margin-left: 10px !important;
+}
+
+.cloud-status {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #3498db;
 }
 
 .copy-btn {
