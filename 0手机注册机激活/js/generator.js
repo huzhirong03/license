@@ -392,8 +392,9 @@ async function generateLicense() {
         // HMAC 签名
         const signature = hmacSign(signContent);
         
-        // 添加签名到数据
+        // 添加签名和手机号到数据（phone 不参与签名）
         licenseData.signature = signature;
+        licenseData.phone = document.getElementById('customerPhone').value.trim() || '';
         
         // AES 加密
         const jsonStr = JSON.stringify(licenseData);
