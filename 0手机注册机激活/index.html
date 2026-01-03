@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R2V 证书生成器 v3.0</title>
+    <title>激活码生成器 v3.0</title>
     <link rel="stylesheet" href="css/style.css">
     <!-- 引入加密库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.8.6/jsrsasign-all-min.js"></script>
 </head>
 <body>
     <!-- 密码保护层 -->
@@ -24,22 +23,25 @@
     <!-- 主界面（密码验证后显示） -->
     <div id="mainScreen" class="main-screen" style="display: none;">
         <div class="container">
-            <h1>🔑 R2V 证书生成器 v3.0</h1>
+            <h1>🔑 激活码生成器 v3.0</h1>
             <p class="warning">⚠️ 此工具仅供管理员使用，请勿分享！</p>
-            <p class="version-note">✅ RSA证书方案 | 支持时间叠加 | 云端同步</p>
+            <p class="version-note">✅ 支持 R2V + VBA插件 | 支持续费</p>
+
+            <!-- 选择程序 -->
+            <div class="form-group">
+                <label>选择程序：</label>
+                <select id="programSelect" onchange="updateLicenseTypeOptions()">
+                    <option value="R2V">矢量转换工具 (R2V)</option>
+                    <option value="VBA_TOOL">宏嫖边工具 (VBA插件)</option>
+                </select>
+            </div>
 
             <!-- 授权类型 -->
             <div class="form-group">
                 <label>授权类型：</label>
                 <div class="type-row">
                     <select id="licenseType" onchange="toggleCustomDays()">
-                        <option value="D1">1天（测试）</option>
-                        <option value="D7">7天</option>
-                        <option value="M30" selected>1个月</option>
-                        <option value="M90">3个月</option>
-                        <option value="Y1">1年</option>
-                        <option value="PERM">永久</option>
-                        <option value="CUSTOM">自定义天数</option>
+                        <!-- 选项由JavaScript动态生成 -->
                     </select>
                     <input type="number" id="customDays" placeholder="天数" style="display:none; width:80px; margin-left:10px;">
                 </div>
@@ -51,14 +53,14 @@
                 <input type="text" id="machineCode" placeholder="例如：7AC0-830F-511C-8857" autocomplete="off">
             </div>
 
-            <!-- 客户名称 -->
-            <div class="form-group">
+            <!-- 客户名称（仅R2V显示） -->
+            <div class="form-group" id="customerGroup">
                 <label>客户名称：</label>
                 <input type="text" id="customerName" placeholder="可选，方便记录">
             </div>
 
-            <!-- 手机号 -->
-            <div class="form-group">
+            <!-- 手机号（仅R2V显示） -->
+            <div class="form-group" id="phoneGroup">
                 <label>手机号：</label>
                 <input type="text" id="phone" placeholder="可选，方便查找客户">
             </div>
@@ -70,23 +72,26 @@
             <div id="resultArea" class="result-area" style="display: none;">
                 <label>✅ 生成成功！激活码：</label>
                 <div class="result-box">
-                    <textarea id="licenseResult" readonly rows="4"></textarea>
+                    <textarea id="licenseResult" readonly rows="3"></textarea>
                 </div>
                 <button class="copy-btn" onclick="copyLicense()" style="width:100%; margin-top:10px;">📋 复制激活码</button>
                 <p id="licenseInfo" class="license-info"></p>
                 <p id="cloudStatus" class="cloud-status"></p>
+                
+                <!-- 再次生成按钮 -->
+                <button class="regen-btn" onclick="generateLicense()">🔄 再次生成（续费用）</button>
             </div>
 
             <!-- 使用说明 -->
             <div class="help-section">
                 <h3>📖 使用说明</h3>
                 <ol>
+                    <li>选择程序类型（R2V 或 VBA插件）</li>
                     <li>选择授权类型（时长）</li>
-                    <li>输入用户机器码（19位，格式：XXXX-XXXX-XXXX-XXXX）</li>
-                    <li>可选填客户名称和手机号</li>
+                    <li>输入用户机器码（16位）</li>
                     <li>点击"生成激活码"</li>
-                    <li>复制激活码发给用户，用户粘贴即可激活</li>
-                    <li>同一机器码多次生成会自动叠加时间</li>
+                    <li>复制激活码发给用户</li>
+                    <li>续费时再次点击生成即可</li>
                 </ol>
             </div>
         </div>
