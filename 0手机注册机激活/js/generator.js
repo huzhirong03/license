@@ -1,10 +1,9 @@
 /**
- * R2V 证书生成器 - JavaScript 版本 v3.0
+ * 激活码生成器 - JavaScript 版本 v3.0
  * 
- * 功能：
- * 1. 生成 RSA 签名的激活码
- * 2. 支持时间叠加
- * 3. 云端同步到 Supabase
+ * 支持程序：
+ * 1. R2V 矢量转换工具（AES加密 + SHA256签名）
+ * 2. VBA 宏嫖边工具（SimpleHash）
  * 
  * 注意：此代码仅供管理员使用，请勿分享！
  */
@@ -19,6 +18,7 @@ function checkPassword() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainScreen').style.display = 'block';
         sessionStorage.setItem('authenticated', 'true');
+        updateLicenseTypeOptions(); // 初始化选项
     } else {
         errorElement.textContent = '密码错误，请重试';
         document.getElementById('passwordInput').value = '';
@@ -38,110 +38,114 @@ window.onload = function() {
     if (sessionStorage.getItem('authenticated') === 'true') {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainScreen').style.display = 'block';
+        updateLicenseTypeOptions();
     }
 };
 
-// ==================== UI 控制 ====================
+// ==================== 程序切换处理 ====================
 
-function toggleCustomDays() {
-    const licenseType = document.getElementById('licenseType').value;
-    const customDaysInput = document.getElementById('customDays');
-    customDaysInput.style.display = licenseType === 'CUSTOM' ? 'inline-block' : 'none';
+function updateLicenseTypeOptions() {
+    const programCode = document.getElementById('programSelect').value;
+    const licenseTypeSelect = document.getElementById('licenseType');
+    const customerGroup = document.getElementById('customerGroup');
+    const phoneGroup = document.getElementById('phoneGroup');
+    
+    // 清空现有选项
+    licenseTypeSelect.innerHTML = '';
+    
+    // 根据程序类型加载对应的激活类型
+    let types;
+    if (programCode === 'R2V') {
+        types = R2V_LICENSE_TYPES;
+        customerGroup.style.display = 'block';
+        phoneGroup.style.display = 'block';
+    } else {
+        types = VBA_LICENSE_TYPES;
+        customerGroup.style.display = 'none';
+        phoneGroup.style.display = 'none';
+    }
+    
+    for (const [code, info] of Object.entries(types)) {
+        const option = document.createElement('option');
+        option.value = code;
+        option.textContent = info.name;
+        if (code === 'PERM' || code === 'M30') {
+            option.selected = true;
+        }
+        licenseTypeSelect.appendChild(option);
+    }
+    
+    toggleCustomDays();
 }
 
-// ==================== RSA 签名 ====================
-
-/**
- * 解析 XML 格式的 RSA 私钥并进行签名
- */
-function rsaSignWithXmlKey(data, xmlKey) {
-    try {
-        // 解析 XML 密钥
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlKey, 'text/xml');
-        
-        const getElement = (name) => {
-            const el = xmlDoc.getElementsByTagName(name)[0];
-            return el ? el.textContent : '';
-        };
-        
-        // 获取密钥组件（Base64编码）
-        const n = getElement('Modulus');
-        const e = getElement('Exponent');
-        const d = getElement('D');
-        const p = getElement('P');
-        const q = getElement('Q');
-        const dp = getElement('DP');
-        const dq = getElement('DQ');
-        const qi = getElement('InverseQ');
-        
-        if (!n || !d) {
-            throw new Error('密钥格式错误，请检查 keys.js 中的 RSA_PRIVATE_KEY_XML');
-        }
-        
-        // 使用 jsrsasign 库创建 RSA 密钥
-        const key = KEYUTIL.getKey({
-            n: b64tohex(n),
-            e: b64tohex(e),
-            d: b64tohex(d),
-            p: b64tohex(p),
-            q: b64tohex(q),
-            dp: b64tohex(dp),
-            dq: b64tohex(dq),
-            qi: b64tohex(qi)
-        });
-        
-        // 创建签名对象
-        const sig = new KJUR.crypto.Signature({alg: 'SHA256withRSA'});
-        sig.init(key);
-        sig.updateString(data);
-        const signature = sig.sign();
-        
-        // 返回 Base64 编码的签名
-        return hextob64(signature);
-    } catch (error) {
-        console.error('RSA 签名失败:', error);
-        throw error;
+function toggleCustomDays() {
+    const programCode = document.getElementById('programSelect').value;
+    const licenseType = document.getElementById('licenseType').value;
+    const customDaysInput = document.getElementById('customDays');
+    
+    // 只有 R2V 才有自定义天数选项
+    if (programCode === 'R2V' && licenseType === 'CUSTOM') {
+        customDaysInput.style.display = 'inline-block';
+    } else {
+        customDaysInput.style.display = 'none';
     }
 }
 
-// ==================== AES 加密 ====================
+// ==================== VBA插件 SimpleHash 算法 ====================
 
-/**
- * AES-256-CBC 加密（与 C# 版本一致）
- */
-function aesEncrypt(plainText) {
-    // 使用 SHA256 生成 32 字节密钥
-    const keyHash = CryptoJS.SHA256(LICENSE_FILE_KEY);
-    const key = CryptoJS.lib.WordArray.create(keyHash.words.slice(0, 8)); // 256 bits
+function simpleHash(inputStr) {
+    // 初始化哈希种子（与VBA完全一致）
+    let h1 = 5381;
+    let h2 = 5387;
+    let h3 = 5393;
+    let h4 = 5399;
     
-    // IV 使用 UTF8 编码，取前 16 字节
-    const iv = CryptoJS.enc.Utf8.parse(LICENSE_FILE_IV.substring(0, 16));
+    // 遍历每个字符进行哈希计算
+    for (let i = 0; i < inputStr.length; i++) {
+        const c = inputStr.charCodeAt(i);
+        
+        // 先限制范围再乘法，与VBA完全一致
+        h1 = ((h1 & 0xFFFF) * 33 + c) & 0x7FFFFFFF;
+        h2 = ((h2 & 0xFFFF) * 37 + c) & 0x7FFFFFFF;
+        h3 = ((h3 & 0xFFFF) * 41 + c) & 0x7FFFFFFF;
+        h4 = ((h4 & 0xFFFF) * 43 + c) & 0x7FFFFFFF;
+    }
     
-    // 加密
-    const encrypted = CryptoJS.AES.encrypt(plainText, key, {
-        iv: iv,
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7
-    });
+    // 组合结果
+    const result = 
+        (h1 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0') +
+        (h2 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0') +
+        (h3 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0') +
+        (h4 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
     
-    return encrypted.toString(); // Base64 编码
+    return result;
 }
 
-// ==================== 日期处理 ====================
+function formatCode(code) {
+    let clean = code.replace(/-/g, '').toUpperCase();
+    
+    // 确保16位
+    if (clean.length < 16) {
+        clean = clean + '0'.repeat(16 - clean.length);
+    } else if (clean.length > 16) {
+        clean = clean.substring(0, 16);
+    }
+    
+    return `${clean.substring(0, 4)}-${clean.substring(4, 8)}-${clean.substring(8, 12)}-${clean.substring(12, 16)}`;
+}
 
-/**
- * 获取北京时间
- */
+// ==================== 工具函数 ====================
+
+function generateSalt() {
+    return Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+}
+
 function getBeijingTime() {
     const now = new Date();
     const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    return new Date(utc + (8 * 3600000)); // UTC+8
+    return new Date(utc + (8 * 3600000));
 }
 
-/**
- * 格式化日期为 yyyy-MM-dd
- */
 function formatDate(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -149,18 +153,36 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
-/**
- * 格式化日期时间为 yyyy-MM-dd HH:mm:ss
- */
 function formatDateTime(date) {
     return `${formatDate(date)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
 }
 
-// ==================== Supabase API ====================
+// ==================== R2V AES 加密 ====================
 
-/**
- * 查询激活记录
- */
+function aesEncrypt(plainText) {
+    const keyHash = CryptoJS.SHA256(LICENSE_FILE_KEY);
+    const key = CryptoJS.lib.WordArray.create(keyHash.words.slice(0, 8));
+    const iv = CryptoJS.enc.Utf8.parse(LICENSE_FILE_IV.substring(0, 16));
+    
+    const encrypted = CryptoJS.AES.encrypt(plainText, key, {
+        iv: iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+    });
+    
+    return encrypted.toString();
+}
+
+// ==================== R2V HMAC 签名 ====================
+
+function hmacSign(data) {
+    // 使用 HMAC-SHA256 签名
+    const hash = CryptoJS.HmacSHA256(data, LICENSE_FILE_KEY);
+    return CryptoJS.enc.Base64.stringify(hash);
+}
+
+// ==================== Supabase API（仅R2V）====================
+
 async function getActivation(machineCode) {
     try {
         const response = await fetch(
@@ -184,9 +206,6 @@ async function getActivation(machineCode) {
     }
 }
 
-/**
- * 上传或更新激活记录
- */
 async function upsertActivation(machineCode, customerName, licenseType, expiryDate, daysAdded, phone) {
     try {
         const oldRecord = await getActivation(machineCode);
@@ -205,7 +224,6 @@ async function upsertActivation(machineCode, customerName, licenseType, expiryDa
         
         let response;
         if (oldRecord) {
-            // 更新
             response = await fetch(
                 `${SUPABASE_URL}/rest/v1/activations_r2v?machine_code=eq.${machineCode}`,
                 {
@@ -219,7 +237,6 @@ async function upsertActivation(machineCode, customerName, licenseType, expiryDa
                 }
             );
         } else {
-            // 插入
             response = await fetch(
                 `${SUPABASE_URL}/rest/v1/activations_r2v`,
                 {
@@ -234,7 +251,6 @@ async function upsertActivation(machineCode, customerName, licenseType, expiryDa
             );
         }
         
-        // 记录历史
         if (response.ok) {
             await addHistory(machineCode, customerName, licenseType, daysAdded, 
                 oldRecord?.expiry_date, expiryDate, phone);
@@ -247,9 +263,6 @@ async function upsertActivation(machineCode, customerName, licenseType, expiryDa
     }
 }
 
-/**
- * 添加历史记录
- */
 async function addHistory(machineCode, customerName, licenseType, daysAdded, expiryBefore, expiryAfter, phone) {
     try {
         const data = {
@@ -284,22 +297,31 @@ async function addHistory(machineCode, customerName, licenseType, daysAdded, exp
 // ==================== 激活码生成 ====================
 
 async function generateLicense() {
-    try {
-        // 获取输入
-        const machineCode = document.getElementById('machineCode').value.trim().toUpperCase();
+    const programCode = document.getElementById('programSelect').value;
+    const machineCode = document.getElementById('machineCode').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    let typeCode = document.getElementById('licenseType').value;
+
+    // 更新输入框显示
+    document.getElementById('machineCode').value = machineCode;
+
+    // 验证机器码格式
+    const cleanCode = machineCode.replace(/-/g, '');
+    if (cleanCode.length !== 16) {
+        alert(`机器码格式不正确！\n\n当前长度：${cleanCode.length} 位\n应该是：16 位\n\n格式示例：XXXX-XXXX-XXXX-XXXX`);
+        return;
+    }
+
+    let licenseKey;
+    let expiryInfo;
+    const salt = generateSalt();
+
+    if (programCode === 'R2V') {
+        // ==================== R2V 激活码生成 ====================
         const customerName = document.getElementById('customerName').value.trim();
         const phone = document.getElementById('phone').value.trim();
-        let typeCode = document.getElementById('licenseType').value;
-        
-        // 验证机器码
-        const cleanCode = machineCode.replace(/-/g, '');
-        if (cleanCode.length !== 16) {
-            alert(`机器码格式不正确！\n\n当前长度：${cleanCode.length} 位\n应该是：16 位\n\n格式示例：XXXX-XXXX-XXXX-XXXX`);
-            return;
-        }
         
         // 计算天数
-        let days = LICENSE_TYPES[typeCode].days;
+        let days = R2V_LICENSE_TYPES[typeCode].days;
         if (typeCode === 'CUSTOM') {
             days = parseInt(document.getElementById('customDays').value) || 0;
             if (days <= 0) {
@@ -315,6 +337,7 @@ async function generateLicense() {
         
         if (typeCode === 'PERM' || days === 0) {
             expiryDate = '永久';
+            expiryInfo = '永久有效';
         } else {
             // 查询旧记录，计算叠加时间
             const oldRecord = await getActivation(machineCode);
@@ -330,6 +353,7 @@ async function generateLicense() {
             const newExpiry = new Date(baseDate);
             newExpiry.setDate(newExpiry.getDate() + days);
             expiryDate = formatDate(newExpiry);
+            expiryInfo = `到期：${expiryDate}`;
         }
         
         // 构建证书数据
@@ -341,23 +365,11 @@ async function generateLicense() {
             created: formatDateTime(getBeijingTime())
         };
         
-        // 生成签名内容（与 C# 版本一致）
-        const signContent = JSON.stringify({
-            machine_code: licenseData.machine_code,
-            type: licenseData.type,
-            expiry: licenseData.expiry,
-            customer: licenseData.customer,
-            created: licenseData.created
-        });
+        // 签名内容
+        const signContent = JSON.stringify(licenseData);
         
-        // RSA 签名
-        let signature;
-        try {
-            signature = rsaSignWithXmlKey(signContent, RSA_PRIVATE_KEY_XML);
-        } catch (error) {
-            alert('RSA 签名失败！请检查 keys.js 中的密钥是否正确配置。\n\n错误：' + error.message);
-            return;
-        }
+        // HMAC 签名
+        const signature = hmacSign(signContent);
         
         // 添加签名到数据
         licenseData.signature = signature;
@@ -367,20 +379,19 @@ async function generateLicense() {
         const encryptedData = aesEncrypt(jsonStr);
         
         // 生成激活码（两行合并用|分隔）
-        const activationCode = `${encryptedData}|${signature}`;
+        licenseKey = `${encryptedData}|${signature}`;
         
         // 显示结果
         document.getElementById('resultArea').style.display = 'block';
-        document.getElementById('licenseResult').value = activationCode;
+        document.getElementById('licenseResult').value = licenseKey;
         
-        // 显示信息
-        const typeName = LICENSE_TYPES[document.getElementById('licenseType').value]?.name || `${days}天`;
+        const typeName = R2V_LICENSE_TYPES[document.getElementById('licenseType').value]?.name || `${days}天`;
         document.getElementById('licenseInfo').innerHTML = 
+            `<strong>程序：</strong>矢量转换工具 (R2V)<br>` +
             `<strong>机器码：</strong>${machineCode}<br>` +
             `<strong>授权类型：</strong>${typeName}<br>` +
-            `<strong>到期时间：</strong>${expiryDate}<br>` +
-            `<strong>客户：</strong>${customerName || '未填写'}<br>` +
-            `<strong>手机：</strong>${phone || '未填写'}`;
+            `<strong>有效期：</strong>${expiryInfo}<br>` +
+            `<strong>客户：</strong>${customerName || '未填写'}`;
         
         // 上传到云端
         document.getElementById('cloudStatus').innerHTML = '☁️ 正在同步到云端...';
@@ -389,9 +400,42 @@ async function generateLicense() {
             ? '✅ 已同步到云端' 
             : '⚠️ 云端同步失败（激活码仍然有效）';
         
-    } catch (error) {
-        alert('生成失败：' + error.message);
-        console.error(error);
+    } else {
+        // ==================== VBA插件激活码生成 ====================
+        const types = VBA_LICENSE_TYPES;
+        const typeInfo = types[typeCode];
+        
+        // 组合数据（包含激活类型和盐值）
+        const rawData = `${cleanCode}|LICENSE|${VBA_SECRET_KEY}|${typeCode}|${salt}`;
+        
+        // 生成哈希
+        const hash = simpleHash(rawData);
+        
+        // 激活码 = Hash前12位 + 盐值4位
+        const licenseCode = hash.substring(0, 12) + salt;
+        licenseKey = formatCode(licenseCode);
+        
+        // 有效期说明
+        if (typeInfo.days === 0) {
+            expiryInfo = '永久有效';
+        } else if (typeCode.startsWith('S')) {
+            expiryInfo = `激活后 ${typeCode.substring(1)} 秒内有效`;
+        } else {
+            expiryInfo = `激活后 ${typeInfo.days} 天内有效`;
+        }
+        
+        // 显示结果
+        document.getElementById('resultArea').style.display = 'block';
+        document.getElementById('licenseResult').value = licenseKey;
+        document.getElementById('licenseInfo').innerHTML = 
+            `<strong>程序：</strong>宏嫖边工具 (VBA插件)<br>` +
+            `<strong>机器码：</strong>${machineCode}<br>` +
+            `<strong>类型：</strong>${typeInfo.name}<br>` +
+            `<strong>有效期：</strong>${expiryInfo}<br>` +
+            `<span style="color: #3498db;">💡 每次点击生成都会产生新的激活码</span>`;
+        
+        // VBA插件不需要云端同步
+        document.getElementById('cloudStatus').innerHTML = '';
     }
 }
 
