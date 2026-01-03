@@ -404,7 +404,7 @@ async function generateLicense() {
         
         // 添加签名和手机号到数据（phone 不参与签名）
         licenseData.signature = signature;
-        licenseData.phone = document.getElementById('customerPhone').value.trim() || '';
+        licenseData.phone = document.getElementById('phone').value.trim() || '';
         
         // AES 加密
         const jsonStr = JSON.stringify(licenseData);
