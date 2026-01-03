@@ -181,9 +181,19 @@ function formatDateTime(date) {
 // ==================== R2V AES 加密 ====================
 
 function aesEncrypt(plainText) {
-    const keyHash = CryptoJS.SHA256(LICENSE_FILE_KEY);
-    const key = CryptoJS.lib.WordArray.create(keyHash.words.slice(0, 8));
-    const iv = CryptoJS.enc.Utf8.parse(LICENSE_FILE_IV.substring(0, 16));
+    // 密钥处理（与 C# 一致：直接 UTF8 编码，取前32字节，不足补0）
+    let keyBytes = [];
+    for (let i = 0; i < 32; i++) {
+        keyBytes.push(i < LICENSE_FILE_KEY.length ? LICENSE_FILE_KEY.charCodeAt(i) : 0);
+    }
+    const key = CryptoJS.lib.WordArray.create(new Uint8Array(keyBytes));
+    
+    // IV 处理（与 C# 一致：直接 UTF8 编码，取前16字节，不足补0）
+    let ivBytes = [];
+    for (let i = 0; i < 16; i++) {
+        ivBytes.push(i < LICENSE_FILE_IV.length ? LICENSE_FILE_IV.charCodeAt(i) : 0);
+    }
+    const iv = CryptoJS.lib.WordArray.create(new Uint8Array(ivBytes));
     
     const encrypted = CryptoJS.AES.encrypt(plainText, key, {
         iv: iv,
