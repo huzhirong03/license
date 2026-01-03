@@ -377,16 +377,16 @@ async function generateLicense() {
             expiryInfo = `到期：${expiryDate}`;
         }
         
-        // 构建证书数据
+        // 构建证书数据（字段名必须与 C# LicenseFileData 一致！）
         const licenseData = {
             machine_code: machineCode,
-            type: typeCode,
-            expiry: expiryDate,
-            customer: customerName,
-            created: formatDateTime(getBeijingTime())
+            license_type: typeCode,      // C# 用 license_type
+            expiry_date: expiryDate,     // C# 用 expiry_date
+            create_time: formatDateTime(getBeijingTime()),  // C# 用 create_time
+            customer: customerName
         };
         
-        // 签名内容
+        // 签名内容（不包含 signature 字段）
         const signContent = JSON.stringify(licenseData);
         
         // HMAC 签名
