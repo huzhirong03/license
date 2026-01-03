@@ -26,56 +26,77 @@ function checkPassword() {
     }
 }
 
-// 回车键登录
-document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        checkPassword();
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 回车键登录
+    const passwordInput = document.getElementById('passwordInput');
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
     }
-});
-
-// 检查是否已登录
-window.onload = function() {
+    
+    // 检查是否已登录
     if (sessionStorage.getItem('authenticated') === 'true') {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainScreen').style.display = 'block';
         updateLicenseTypeOptions();
     }
-};
+});
 
 // ==================== 程序切换处理 ====================
 
 function updateLicenseTypeOptions() {
-    const programCode = document.getElementById('programSelect').value;
-    const licenseTypeSelect = document.getElementById('licenseType');
-    const customerGroup = document.getElementById('customerGroup');
-    const phoneGroup = document.getElementById('phoneGroup');
-    
-    // 清空现有选项
-    licenseTypeSelect.innerHTML = '';
-    
-    // 根据程序类型加载对应的激活类型
-    let types;
-    if (programCode === 'R2V') {
-        types = R2V_LICENSE_TYPES;
-        customerGroup.style.display = 'block';
-        phoneGroup.style.display = 'block';
-    } else {
-        types = VBA_LICENSE_TYPES;
-        customerGroup.style.display = 'none';
-        phoneGroup.style.display = 'none';
-    }
-    
-    for (const [code, info] of Object.entries(types)) {
-        const option = document.createElement('option');
-        option.value = code;
-        option.textContent = info.name;
-        if (code === 'PERM' || code === 'M30') {
-            option.selected = true;
+    try {
+        const programSelect = document.getElementById('programSelect');
+        const licenseTypeSelect = document.getElementById('licenseType');
+        const customerGroup = document.getElementById('customerGroup');
+        const phoneGroup = document.getElementById('phoneGroup');
+        
+        if (!programSelect || !licenseTypeSelect) {
+            console.error('找不到必要的DOM元素');
+            return;
         }
-        licenseTypeSelect.appendChild(option);
+        
+        const programCode = programSelect.value;
+        
+        // 清空现有选项
+        licenseTypeSelect.innerHTML = '';
+        
+        // 根据程序类型加载对应的激活类型
+        let types;
+        if (programCode === 'R2V') {
+            types = typeof R2V_LICENSE_TYPES !== 'undefined' ? R2V_LICENSE_TYPES : {};
+            if (customerGroup) customerGroup.style.display = 'block';
+            if (phoneGroup) phoneGroup.style.display = 'block';
+        } else {
+            types = typeof VBA_LICENSE_TYPES !== 'undefined' ? VBA_LICENSE_TYPES : {};
+            if (customerGroup) customerGroup.style.display = 'none';
+            if (phoneGroup) phoneGroup.style.display = 'none';
+        }
+        
+        // 检查types是否为空
+        if (Object.keys(types).length === 0) {
+            console.error('授权类型配置为空，请检查 keys.js');
+            return;
+        }
+        
+        for (const [code, info] of Object.entries(types)) {
+            const option = document.createElement('option');
+            option.value = code;
+            option.textContent = info.name;
+            if (code === 'M30') {
+                option.selected = true;
+            }
+            licenseTypeSelect.appendChild(option);
+        }
+        
+        toggleCustomDays();
+    } catch (error) {
+        console.error('updateLicenseTypeOptions 错误:', error);
     }
-    
-    toggleCustomDays();
 }
 
 function toggleCustomDays() {
