@@ -18,6 +18,20 @@ const RSA_PRIVATE_KEY_XML = `<RSAKeyValue><Modulus>3dDMo1XJOQzvGNBdR4An3syRxggaH
 // 密钥（与 ActivationModule.bas 中的 SECRET_KEY 一致）
 const VBA_SECRET_KEY = 'fage_cdr_plugin_2024_vba_key';
 
+// ==================== QuickPaiban 閰嶇疆（QPA1-RSA） ====================
+const QUICKPAIBAN_PRODUCT_ID = 'CDRPAIBAN_QUICKPAIBAN_2026';
+const QUICKPAIBAN_ISSUER = 'QuickPaiban-Release';
+const QUICKPAIBAN_PRIVATE_KEY_XML = `<RSAKeyValue><Modulus>1gyrtAURadOGv25fxbkmrdZCZ8J0ACKUK8KxHBgxldWirTQlEwwKH20Hk1pQXYFototBxKNCJxEsvOBiDDqCOf24SMXP9peQoUWdjOb0e9w3OpQoZgyyyZLv5zr94vc2uq+SNupcmuCLh/6be66ipb3h3vEKJEPz+ZT+ameZOYyXHGhE6zhwGojt4yPoT6zLsHaKFAM39ay10gn9r5qBZnQU8ka6B1GcCnTlrcd0Xb1qIK7q+Vc35xLXZaOw0dF96iqYhSyWntcT3kzo3DNifjpKrJG0EQPLzmXu0JSooAjmzFB5fZs4Z6LckcfYMefW+58quRZUASC2e+y4siWuXQ==</Modulus><Exponent>AQAB</Exponent><P>9HFe/YiTlk2via2IT4YbZQUJ9t9rjxzezP4ToQuOCs14hvG2KQKg0fkc+1QPq93xiPeFNzp4Dvwjfg1OMCvPvURZVO6LYhLRZgrMqILpKSHbYzJxs8mjUXEPV36QuzIuwWWgZgPrjprA9bcKedOKIvOUFyyVTBFOfWsGd1TAsMs=</P><Q>4CtuiK3HUHUDY+Icj68KuuXEwSXZlE7XrDVHa1OBVT7PR5kF4g4UCSK4yphYWxq8BJARitZJuXGDT9vxK6K8och5lzFKP0vdVK3IIiCo/ZYy2+hxslPecN9fzQupp/8Hjcc74e3ZYeu0ksQQ+ObjmkahLNMtzJnfm7fb8tzKgHc=</Q><DP>2i1iqoq/qFUYi5tO4iQByY3Q0f+ioi8TkgZpgMGue2ff3xpZC4uj/SYLPyxNfIpxrl23Eo9mX4GfMEAx/H7uQbGCxnLQB65iJmEXQITwFV150rVQlTcxRVzTY7W8+siUwNuzabqwAi2QcwB4Ijq0vfOIx5Jsg2OjGgBv2gzUnDc=</DP><DQ>uBIxwz2e6mwLCpuChGFhWDKPq2IfFW7gHeHp8TEyhAL9RXdbo1GYFiBSyNjrxHNhbAW4wd5Pz1xsTMj3cbNBXT82yHWK2Aq9hWjla1CSMxiATp7BrYK8psZk7gPjnbUGSN8ORuh9lbBsKA+jOB6vSeExO5N0igrX2A/TJcsy5OU=</DQ><InverseQ>m1u1HRDiC4d6iNtyBGTG/v+aJmk/x/WNa05MNfRCeRFoQBh//KY60cDgYV3WqUj4yeTOlkD9jty3iE6+rEEHcZkilBENFyzk8FJ86dPLqsMXT0ia9KYdhylZTD6pndBanh4mSLNl8fluD/sdbXrSUPwO2XOsbTm7FosUgCGwD5k=</InverseQ><D>S/MXAbtCoIAzsb0iMnAt70S1L0fqDRo35Qch/MwA3B9/p2F3PjjpZpkzNO+40FTYqNzkqzcag+4uJ56ea6RfDOCgAQJfdin1YaPn8VUJruFGn3xukTc0QR3oDe36pAv/2WHuyZmC3lmKaOjIlqwyfgjQGmEArjmGWiqp02uLDMXVmZ14yYhJ8Wa3mujafBUI4gtYF28Orp02iT+d1GxpmytWl+q3hj28n27Kv7xyfoeQSKov6ccMVNMm0oJvP8fI2dUAEL04LFmkuCOKZaGgKgL63+gvNJYRdCabQzdIp7gFoMiDxBB2VMnWqmzlW+1xMhW3jk6gITEC79MeY7dtaQ==</D></RSAKeyValue>`;
+const QUICKPAIBAN_LICENSE_TYPES = {
+    'PERM': { name: '永久', lt: 'PERM', d: 0 },
+    'D001': { name: '1天', lt: 'D001', d: 1 },
+    'M030': { name: '30天', lt: 'M030', d: 30 },
+    'Y365': { name: '365天', lt: 'Y365', d: 365 },
+    'DAYS_CUSTOM': { name: '自定义天数', lt: 'DAYS', d: -1 },
+    'MINUTES_CUSTOM': { name: '自定义分钟(测试)', lt: 'MINUTES', d: -1 },
+    'M001': { name: '1分钟(测试)', lt: 'M001', d: 1 }
+};
+
 // ==================== Supabase 配置（仅R2V使用）====================
 const SUPABASE_URL = 'https://cdvoeabekfuujaehxocl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkdm9lYWJla2Z1dWphZWh4b2NsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxNjM3MDQsImV4cCI6MjA4MTczOTcwNH0.VrT3fJfKKXwwOF_dx1v_vMkNm1bXIEhhL_4iui0RKB8';
