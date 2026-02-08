@@ -1,24 +1,17 @@
 /**
- * 激活码生成器 - JavaScript 版本 v3.0
- * 
- * 支持程序：
- * 1. R2V 矢量转换工具（AES加密 + SHA256签名）
- * 2. VBA 宏嫖边工具（SimpleHash）
- * 
- * 注意：此代码仅供管理员使用，请勿分享！
+ * 激活码生成器 - JavaScript 版本 v4.0
+ * 支持：R2V / QuickPaiban / VBA_TOOL
  */
-
-// ==================== 密码验证 ====================
 
 function checkPassword() {
     const input = document.getElementById('passwordInput').value;
     const errorElement = document.getElementById('loginError');
-    
+
     if (input === ACCESS_PASSWORD) {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainScreen').style.display = 'block';
         sessionStorage.setItem('authenticated', 'true');
-        updateLicenseTypeOptions(); // 初始化选项
+        updateLicenseTypeOptions();
     } else {
         errorElement.textContent = '密码错误，请重试';
         document.getElementById('passwordInput').value = '';
@@ -26,19 +19,14 @@ function checkPassword() {
     }
 }
 
-// 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', function() {
-    // 回车键登录
+document.addEventListener('DOMContentLoaded', function () {
     const passwordInput = document.getElementById('passwordInput');
     if (passwordInput) {
-        passwordInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                checkPassword();
-            }
+        passwordInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') checkPassword();
         });
     }
-    
-    // 检查是否已登录
+
     if (sessionStorage.getItem('authenticated') === 'true') {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainScreen').style.display = 'block';
@@ -46,56 +34,47 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ==================== 程序切换处理 ====================
-
 function updateLicenseTypeOptions() {
     try {
         const programSelect = document.getElementById('programSelect');
         const licenseTypeSelect = document.getElementById('licenseType');
         const customerGroup = document.getElementById('customerGroup');
         const phoneGroup = document.getElementById('phoneGroup');
-        
-        if (!programSelect || !licenseTypeSelect) {
-            console.error('找不到必要的DOM元素');
-            return;
-        }
-        
+
+        if (!programSelect || !licenseTypeSelect) return;
+
         const programCode = programSelect.value;
-        
-        // 清空现有选项
         licenseTypeSelect.innerHTML = '';
-        
-        // 根据程序类型加载对应的激活类型
-        let types;
+
+        let types = {};
         if (programCode === 'R2V') {
-            types = typeof R2V_LICENSE_TYPES !== 'undefined' ? R2V_LICENSE_TYPES : {};
+            types = R2V_LICENSE_TYPES || {};
             if (customerGroup) customerGroup.style.display = 'block';
             if (phoneGroup) phoneGroup.style.display = 'block';
+        } else if (programCode === 'QUICKPAIBAN') {
+            types = QUICKPAIBAN_LICENSE_TYPES || {};
+            if (customerGroup) customerGroup.style.display = 'none';
+            if (phoneGroup) phoneGroup.style.display = 'none';
         } else {
-            types = typeof VBA_LICENSE_TYPES !== 'undefined' ? VBA_LICENSE_TYPES : {};
+            types = VBA_LICENSE_TYPES || {};
             if (customerGroup) customerGroup.style.display = 'none';
             if (phoneGroup) phoneGroup.style.display = 'none';
         }
-        
-        // 检查types是否为空
-        if (Object.keys(types).length === 0) {
-            console.error('授权类型配置为空，请检查 keys.js');
-            return;
-        }
-        
+
         for (const [code, info] of Object.entries(types)) {
             const option = document.createElement('option');
             option.value = code;
             option.textContent = info.name;
-            if (code === 'M30') {
+            if ((programCode === 'R2V' && code === 'M30') ||
+                (programCode === 'QUICKPAIBAN' && code === 'M030')) {
                 option.selected = true;
             }
             licenseTypeSelect.appendChild(option);
         }
-        
+
         toggleCustomDays();
     } catch (error) {
-        console.error('updateLicenseTypeOptions 错误:', error);
+        console.error('updateLicenseTypeOptions error:', error);
     }
 }
 
@@ -103,62 +82,50 @@ function toggleCustomDays() {
     const programCode = document.getElementById('programSelect').value;
     const licenseType = document.getElementById('licenseType').value;
     const customDaysInput = document.getElementById('customDays');
-    
-    // 只有 R2V 才有自定义天数选项
-    if (programCode === 'R2V' && licenseType === 'CUSTOM') {
-        customDaysInput.style.display = 'inline-block';
-    } else {
-        customDaysInput.style.display = 'none';
-    }
+
+    const show = (programCode === 'R2V' && licenseType === 'CUSTOM') ||
+        (programCode === 'QUICKPAIBAN' && (licenseType === 'DAYS_CUSTOM' || licenseType === 'MINUTES_CUSTOM'));
+
+    customDaysInput.style.display = show ? 'inline-block' : 'none';
+    customDaysInput.placeholder = (programCode === 'QUICKPAIBAN' && licenseType === 'MINUTES_CUSTOM') ? '分钟' : '天数';
 }
 
-// ==================== VBA插件 SimpleHash 算法 ====================
-
 function simpleHash(inputStr) {
-    // 初始化哈希种子（与VBA完全一致）
     let h1 = 5381;
     let h2 = 5387;
     let h3 = 5393;
     let h4 = 5399;
-    
-    // 遍历每个字符进行哈希计算
+
     for (let i = 0; i < inputStr.length; i++) {
         const c = inputStr.charCodeAt(i);
-        
-        // 先限制范围再乘法，与VBA完全一致
         h1 = ((h1 & 0xFFFF) * 33 + c) & 0x7FFFFFFF;
         h2 = ((h2 & 0xFFFF) * 37 + c) & 0x7FFFFFFF;
         h3 = ((h3 & 0xFFFF) * 41 + c) & 0x7FFFFFFF;
         h4 = ((h4 & 0xFFFF) * 43 + c) & 0x7FFFFFFF;
     }
-    
-    // 组合结果
-    const result = 
-        (h1 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0') +
+
+    return (h1 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0') +
         (h2 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0') +
         (h3 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0') +
         (h4 & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
-    
-    return result;
 }
 
 function formatCode(code) {
     let clean = code.replace(/-/g, '').toUpperCase();
-    
-    // 确保16位
-    if (clean.length < 16) {
-        clean = clean + '0'.repeat(16 - clean.length);
-    } else if (clean.length > 16) {
-        clean = clean.substring(0, 16);
-    }
-    
+    if (clean.length < 16) clean = clean + '0'.repeat(16 - clean.length);
+    if (clean.length > 16) clean = clean.substring(0, 16);
     return `${clean.substring(0, 4)}-${clean.substring(4, 8)}-${clean.substring(8, 12)}-${clean.substring(12, 16)}`;
 }
 
-// ==================== 工具函数 ====================
-
 function generateSalt() {
     return Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+}
+
+function generateNonceHex(length) {
+    const chars = '0123456789abcdef';
+    let out = '';
+    for (let i = 0; i < length; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
 }
 
 function getBeijingTime() {
@@ -178,41 +145,128 @@ function formatDateTime(date) {
     return `${formatDate(date)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
 }
 
-// ==================== R2V AES 加密 ====================
-
 function aesEncrypt(plainText) {
-    // 密钥处理（与 C# 一致：直接 UTF8 编码，取前32字节，不足补0）
-    let keyBytes = [];
-    for (let i = 0; i < 32; i++) {
-        keyBytes.push(i < LICENSE_FILE_KEY.length ? LICENSE_FILE_KEY.charCodeAt(i) : 0);
-    }
+    const keyBytes = [];
+    for (let i = 0; i < 32; i++) keyBytes.push(i < LICENSE_FILE_KEY.length ? LICENSE_FILE_KEY.charCodeAt(i) : 0);
     const key = CryptoJS.lib.WordArray.create(new Uint8Array(keyBytes));
-    
-    // IV 处理（与 C# 一致：直接 UTF8 编码，取前16字节，不足补0）
-    let ivBytes = [];
-    for (let i = 0; i < 16; i++) {
-        ivBytes.push(i < LICENSE_FILE_IV.length ? LICENSE_FILE_IV.charCodeAt(i) : 0);
-    }
+
+    const ivBytes = [];
+    for (let i = 0; i < 16; i++) ivBytes.push(i < LICENSE_FILE_IV.length ? LICENSE_FILE_IV.charCodeAt(i) : 0);
     const iv = CryptoJS.lib.WordArray.create(new Uint8Array(ivBytes));
-    
+
     const encrypted = CryptoJS.AES.encrypt(plainText, key, {
         iv: iv,
         mode: CryptoJS.mode.CBC,
         padding: CryptoJS.pad.Pkcs7
     });
-    
+
     return encrypted.toString();
 }
 
-// ==================== R2V HMAC 签名 ====================
-
 function hmacSign(data) {
-    // 使用 HMAC-SHA256 签名
     const hash = CryptoJS.HmacSHA256(data, LICENSE_FILE_KEY);
     return CryptoJS.enc.Base64.stringify(hash);
 }
 
-// ==================== Supabase API（仅R2V）====================
+function base64ToBase64Url(b64) {
+    return (b64 || '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function toBase64UrlFromBytes(bytes) {
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+        const sub = bytes.subarray(i, i + chunk);
+        binary += String.fromCharCode.apply(null, sub);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function extractXmlTag(xml, tagName) {
+    const re = new RegExp(`<${tagName}>([^<]+)</${tagName}>`, 'i');
+    const m = re.exec(xml || '');
+    return m ? m[1] : '';
+}
+
+function parseQuickPaibanPrivateKeyToJwk() {
+    const xml = QUICKPAIBAN_PRIVATE_KEY_XML || '';
+    return {
+        kty: 'RSA',
+        n: base64ToBase64Url(extractXmlTag(xml, 'Modulus')),
+        e: base64ToBase64Url(extractXmlTag(xml, 'Exponent')),
+        d: base64ToBase64Url(extractXmlTag(xml, 'D')),
+        p: base64ToBase64Url(extractXmlTag(xml, 'P')),
+        q: base64ToBase64Url(extractXmlTag(xml, 'Q')),
+        dp: base64ToBase64Url(extractXmlTag(xml, 'DP')),
+        dq: base64ToBase64Url(extractXmlTag(xml, 'DQ')),
+        qi: base64ToBase64Url(extractXmlTag(xml, 'InverseQ')),
+        alg: 'RS256',
+        ext: true,
+        key_ops: ['sign']
+    };
+}
+
+async function generateQuickPaibanCode(machineCode, typeCode, customValue) {
+    if (!window.crypto || !window.crypto.subtle) {
+        throw new Error('当前浏览器不支持 WebCrypto，无法生成 QuickPaiban 激活码。');
+    }
+
+    const typeInfo = QUICKPAIBAN_LICENSE_TYPES[typeCode];
+    if (!typeInfo) throw new Error('QuickPaiban 激活类型无效。');
+
+    let lt = typeInfo.lt;
+    let d = typeInfo.d;
+
+    if (typeCode === 'DAYS_CUSTOM' || typeCode === 'MINUTES_CUSTOM') {
+        const num = parseInt(customValue, 10) || 0;
+        if (num <= 0) {
+            throw new Error(typeCode === 'DAYS_CUSTOM' ? '请输入有效天数。' : '请输入有效分钟数。');
+        }
+        d = num;
+    }
+
+    const payload = {
+        v: 1,
+        pid: QUICKPAIBAN_PRODUCT_ID,
+        mid: machineCode,
+        lt: lt,
+        d: d > 0 ? d : 0,
+        iat: Math.floor(Date.now() / 1000),
+        n: generateNonceHex(32),
+        iss: QUICKPAIBAN_ISSUER
+    };
+
+    const payloadJson = JSON.stringify(payload);
+    const payloadBytes = new TextEncoder().encode(payloadJson);
+    const payloadB64Url = toBase64UrlFromBytes(payloadBytes);
+
+    const jwk = parseQuickPaibanPrivateKeyToJwk();
+    const key = await crypto.subtle.importKey(
+        'jwk',
+        jwk,
+        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+        false,
+        ['sign']
+    );
+
+    const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, payloadBytes);
+    const signatureB64Url = toBase64UrlFromBytes(new Uint8Array(signature));
+    const licenseKey = `QPA1.${payloadB64Url}.${signatureB64Url}`;
+
+    let typeName = typeInfo.name;
+    if (typeCode === 'DAYS_CUSTOM') typeName = `自定义天数(${d}天)`;
+    if (typeCode === 'MINUTES_CUSTOM') typeName = `自定义分钟(${d}分钟)`;
+
+    let expiryInfo = '永久有效';
+    if (lt === 'DAYS') expiryInfo = `激活后 ${d} 天有效`;
+    else if (lt === 'MINUTES') expiryInfo = `激活后 ${d} 分钟有效`;
+    else if (lt === 'M001') expiryInfo = '激活后 1 分钟有效';
+    else if (lt === 'D001') expiryInfo = '激活后 1 天有效';
+    else if (lt === 'M030') expiryInfo = '激活后 30 天有效';
+    else if (lt === 'Y365') expiryInfo = '激活后 365 天有效';
+
+    return { licenseKey, typeName, expiryInfo };
+}
 
 async function getActivation(machineCode) {
     try {
@@ -225,7 +279,6 @@ async function getActivation(machineCode) {
                 }
             }
         );
-        
         if (response.ok) {
             const data = await response.json();
             return data.length > 0 ? data[0] : null;
@@ -241,7 +294,7 @@ async function upsertActivation(machineCode, customerName, licenseType, expiryDa
     try {
         const oldRecord = await getActivation(machineCode);
         const beijingTime = formatDateTime(getBeijingTime());
-        
+
         const data = {
             machine_code: machineCode,
             customer_name: customerName || '',
@@ -252,41 +305,34 @@ async function upsertActivation(machineCode, customerName, licenseType, expiryDa
             last_activation_time: beijingTime,
             updated_at: beijingTime
         };
-        
+
         let response;
         if (oldRecord) {
-            response = await fetch(
-                `${SUPABASE_URL}/rest/v1/activations_r2v?machine_code=eq.${machineCode}`,
-                {
-                    method: 'PATCH',
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                }
-            );
+            response = await fetch(`${SUPABASE_URL}/rest/v1/activations_r2v?machine_code=eq.${machineCode}`, {
+                method: 'PATCH',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
         } else {
-            response = await fetch(
-                `${SUPABASE_URL}/rest/v1/activations_r2v`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                }
-            );
+            response = await fetch(`${SUPABASE_URL}/rest/v1/activations_r2v`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
         }
-        
+
         if (response.ok) {
-            await addHistory(machineCode, customerName, licenseType, daysAdded, 
-                oldRecord?.expiry_date, expiryDate, phone);
+            await addHistory(machineCode, customerName, licenseType, daysAdded, oldRecord?.expiry_date, expiryDate, phone);
         }
-        
+
         return response.ok;
     } catch (error) {
         console.error('上传失败:', error);
@@ -307,177 +353,157 @@ async function addHistory(machineCode, customerName, licenseType, daysAdded, exp
             activation_source: 'MOBILE_WEB',
             remark: ''
         };
-        
-        await fetch(
-            `${SUPABASE_URL}/rest/v1/activation_history_r2v`,
-            {
-                method: 'POST',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            }
-        );
+
+        await fetch(`${SUPABASE_URL}/rest/v1/activation_history_r2v`, {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
     } catch (error) {
         console.error('历史记录失败:', error);
     }
 }
 
-// ==================== 激活码生成 ====================
-
 async function generateLicense() {
-    const programCode = document.getElementById('programSelect').value;
-    const machineCode = document.getElementById('machineCode').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
-    let typeCode = document.getElementById('licenseType').value;
+    try {
+        const programCode = document.getElementById('programSelect').value;
+        const machineCode = document.getElementById('machineCode').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+        let typeCode = document.getElementById('licenseType').value;
 
-    // 更新输入框显示
-    document.getElementById('machineCode').value = machineCode;
+        document.getElementById('machineCode').value = machineCode;
 
-    // 验证机器码格式
-    const cleanCode = machineCode.replace(/-/g, '');
-    if (cleanCode.length !== 16) {
-        alert(`机器码格式不正确！\n\n当前长度：${cleanCode.length} 位\n应该是：16 位\n\n格式示例：XXXX-XXXX-XXXX-XXXX`);
-        return;
-    }
-
-    let licenseKey;
-    let expiryInfo;
-    const salt = generateSalt();
-
-    if (programCode === 'R2V') {
-        // ==================== R2V 激活码生成 ====================
-        const customerName = document.getElementById('customerName').value.trim();
-        const phone = document.getElementById('phone').value.trim();
-        
-        // 计算天数
-        let days = R2V_LICENSE_TYPES[typeCode].days;
-        if (typeCode === 'CUSTOM') {
-            days = parseInt(document.getElementById('customDays').value) || 0;
-            if (days <= 0) {
-                alert('请输入有效的天数！');
-                return;
-            }
-            typeCode = `D${days}`;
+        const cleanCode = machineCode.replace(/-/g, '');
+        if (cleanCode.length !== 16) {
+            alert(`机器码格式不正确！\n\n当前长度：${cleanCode.length} 位\n应该是：16 位\n\n示例：XXXX-XXXX-XXXX-XXXX`);
+            return;
         }
-        
-        // 计算过期日期
-        let expiryDate;
-        const today = getBeijingTime();
-        
-        if (typeCode === 'PERM' || days === 0) {
-            expiryDate = '永久';
-            expiryInfo = '永久有效';
-        } else {
-            // 查询旧记录，计算叠加时间
-            const oldRecord = await getActivation(machineCode);
-            let baseDate = today;
-            
-            if (oldRecord && oldRecord.expiry_date) {
-                const oldExpiry = new Date(oldRecord.expiry_date);
-                if (oldExpiry > today) {
-                    baseDate = oldExpiry;
+
+        let licenseKey;
+        let expiryInfo;
+
+        if (programCode === 'R2V') {
+            const customerName = document.getElementById('customerName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+
+            let days = R2V_LICENSE_TYPES[typeCode].days;
+            if (typeCode === 'CUSTOM') {
+                days = parseInt(document.getElementById('customDays').value, 10) || 0;
+                if (days <= 0) {
+                    alert('请输入有效的天数！');
+                    return;
                 }
+                typeCode = `D${days}`;
             }
-            
-            const newExpiry = new Date(baseDate);
-            newExpiry.setDate(newExpiry.getDate() + days);
-            expiryDate = formatDate(newExpiry);
-            expiryInfo = `到期：${expiryDate}`;
-        }
-        
-        // 构建证书数据（字段名必须与 C# LicenseFileData 一致！）
-        const licenseData = {
-            machine_code: machineCode,
-            license_type: typeCode,      // C# 用 license_type
-            expiry_date: expiryDate,     // C# 用 expiry_date
-            create_time: formatDateTime(getBeijingTime()),  // C# 用 create_time
-            customer: customerName
-        };
-        
-        // 签名内容（不包含 signature 字段）
-        const signContent = JSON.stringify(licenseData);
-        
-        // HMAC 签名
-        const signature = hmacSign(signContent);
-        
-        // 添加签名和手机号到数据（phone 不参与签名）
-        licenseData.signature = signature;
-        licenseData.phone = document.getElementById('phone').value.trim() || '';
-        
-        // AES 加密
-        const jsonStr = JSON.stringify(licenseData);
-        const encryptedData = aesEncrypt(jsonStr);
-        
-        // 生成激活码（两行合并用|分隔）
-        licenseKey = `${encryptedData}|${signature}`;
-        
-        // 显示结果
-        document.getElementById('resultArea').style.display = 'block';
-        document.getElementById('licenseResult').value = licenseKey;
-        
-        const typeName = R2V_LICENSE_TYPES[document.getElementById('licenseType').value]?.name || `${days}天`;
-        document.getElementById('licenseInfo').innerHTML = 
-            `<strong>程序：</strong>矢量转换工具 (R2V)<br>` +
-            `<strong>机器码：</strong>${machineCode}<br>` +
-            `<strong>授权类型：</strong>${typeName}<br>` +
-            `<strong>有效期：</strong>${expiryInfo}<br>` +
-            `<strong>客户：</strong>${customerName || '未填写'}`;
-        
-        // 上传到云端
-        document.getElementById('cloudStatus').innerHTML = '☁️ 正在同步到云端...';
-        const uploaded = await upsertActivation(machineCode, customerName, typeCode, expiryDate, days, phone);
-        document.getElementById('cloudStatus').innerHTML = uploaded 
-            ? '✅ 已同步到云端' 
-            : '⚠️ 云端同步失败（激活码仍然有效）';
-        
-    } else {
-        // ==================== VBA插件激活码生成 ====================
-        const types = VBA_LICENSE_TYPES;
-        const typeInfo = types[typeCode];
-        
-        // 组合数据（包含激活类型和盐值）
-        const rawData = `${cleanCode}|LICENSE|${VBA_SECRET_KEY}|${typeCode}|${salt}`;
-        
-        // 生成哈希
-        const hash = simpleHash(rawData);
-        
-        // 激活码 = Hash前12位 + 盐值4位
-        const licenseCode = hash.substring(0, 12) + salt;
-        licenseKey = formatCode(licenseCode);
-        
-        // 有效期说明
-        if (typeInfo.days === 0) {
-            expiryInfo = '永久有效';
-        } else if (typeCode.startsWith('S')) {
-            expiryInfo = `激活后 ${typeCode.substring(1)} 秒内有效`;
+
+            let expiryDate;
+            const today = getBeijingTime();
+
+            if (typeCode === 'PERM' || days === 0) {
+                expiryDate = '永久';
+                expiryInfo = '永久有效';
+            } else {
+                const oldRecord = await getActivation(machineCode);
+                let baseDate = today;
+                if (oldRecord && oldRecord.expiry_date) {
+                    const oldExpiry = new Date(oldRecord.expiry_date);
+                    if (oldExpiry > today) baseDate = oldExpiry;
+                }
+                const newExpiry = new Date(baseDate);
+                newExpiry.setDate(newExpiry.getDate() + days);
+                expiryDate = formatDate(newExpiry);
+                expiryInfo = `到期：${expiryDate}`;
+            }
+
+            const licenseData = {
+                machine_code: machineCode,
+                license_type: typeCode,
+                expiry_date: expiryDate,
+                create_time: formatDateTime(getBeijingTime()),
+                customer: customerName
+            };
+
+            const signContent = JSON.stringify(licenseData);
+            const signature = hmacSign(signContent);
+            licenseData.signature = signature;
+            licenseData.phone = phone || '';
+
+            const jsonStr = JSON.stringify(licenseData);
+            const encryptedData = aesEncrypt(jsonStr);
+            licenseKey = `${encryptedData}|${signature}`;
+
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('licenseResult').value = licenseKey;
+
+            const typeName = R2V_LICENSE_TYPES[document.getElementById('licenseType').value]?.name || `${days}天`;
+            document.getElementById('licenseInfo').innerHTML =
+                `<strong>程序：</strong>矢量转换工具 (R2V)<br>` +
+                `<strong>机器码：</strong>${machineCode}<br>` +
+                `<strong>授权类型：</strong>${typeName}<br>` +
+                `<strong>有效期：</strong>${expiryInfo}<br>` +
+                `<strong>客户：</strong>${customerName || '未填写'}`;
+
+            document.getElementById('cloudStatus').innerHTML = '☁️ 正在同步到云端...';
+            const uploaded = await upsertActivation(machineCode, customerName, typeCode, expiryDate, days, phone);
+            document.getElementById('cloudStatus').innerHTML = uploaded
+                ? '✅ 已同步到云端'
+                : '⚠️ 云端同步失败（激活码仍然有效）';
+
+        } else if (programCode === 'QUICKPAIBAN') {
+            const customValue = document.getElementById('customDays').value;
+            const result = await generateQuickPaibanCode(machineCode, typeCode, customValue);
+            licenseKey = result.licenseKey;
+
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('licenseResult').value = licenseKey;
+            document.getElementById('licenseInfo').innerHTML =
+                `<strong>程序：</strong>快速排版助手 (QuickPaiban)<br>` +
+                `<strong>机器码：</strong>${machineCode}<br>` +
+                `<strong>类型：</strong>${result.typeName}<br>` +
+                `<strong>有效期：</strong>${result.expiryInfo}<br>` +
+                `<span style="color: #3498db;">💡 生成格式：QPA1.payload.signature（RSA-SHA256）</span>`;
+            document.getElementById('cloudStatus').innerHTML = '';
+
         } else {
-            expiryInfo = `激活后 ${typeInfo.days} 天内有效`;
+            const typeInfo = VBA_LICENSE_TYPES[typeCode];
+            const salt = generateSalt();
+            const rawData = `${cleanCode}|LICENSE|${VBA_SECRET_KEY}|${typeCode}|${salt}`;
+            const hash = simpleHash(rawData);
+            const licenseCode = hash.substring(0, 12) + salt;
+            licenseKey = formatCode(licenseCode);
+
+            if (typeInfo.days === 0) {
+                expiryInfo = '永久有效';
+            } else if (typeCode.startsWith('S')) {
+                expiryInfo = `激活后 ${typeCode.substring(1)} 秒内有效`;
+            } else {
+                expiryInfo = `激活后 ${typeInfo.days} 天内有效`;
+            }
+
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('licenseResult').value = licenseKey;
+            document.getElementById('licenseInfo').innerHTML =
+                `<strong>程序：</strong>宏嫖边工具 (VBA插件)<br>` +
+                `<strong>机器码：</strong>${machineCode}<br>` +
+                `<strong>类型：</strong>${typeInfo.name}<br>` +
+                `<strong>有效期：</strong>${expiryInfo}<br>` +
+                `<span style="color: #3498db;">💡 每次点击生成都会产生新的激活码</span>`;
+            document.getElementById('cloudStatus').innerHTML = '';
         }
-        
-        // 显示结果
-        document.getElementById('resultArea').style.display = 'block';
-        document.getElementById('licenseResult').value = licenseKey;
-        document.getElementById('licenseInfo').innerHTML = 
-            `<strong>程序：</strong>宏嫖边工具 (VBA插件)<br>` +
-            `<strong>机器码：</strong>${machineCode}<br>` +
-            `<strong>类型：</strong>${typeInfo.name}<br>` +
-            `<strong>有效期：</strong>${expiryInfo}<br>` +
-            `<span style="color: #3498db;">💡 每次点击生成都会产生新的激活码</span>`;
-        
-        // VBA插件不需要云端同步
-        document.getElementById('cloudStatus').innerHTML = '';
+    } catch (err) {
+        console.error(err);
+        alert(`生成失败：${err.message || err}`);
     }
 }
-
-// ==================== 复制功能 ====================
 
 function copyLicense() {
     const textarea = document.getElementById('licenseResult');
     textarea.select();
     textarea.setSelectionRange(0, 99999);
-    
+
     try {
         navigator.clipboard.writeText(textarea.value).then(() => {
             showCopySuccess();
