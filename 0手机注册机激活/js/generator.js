@@ -53,8 +53,8 @@ function updateLicenseTypeOptions() {
             if (phoneGroup) phoneGroup.style.display = 'block';
         } else if (programCode === 'QUICKPAIBAN') {
             types = QUICKPAIBAN_LICENSE_TYPES || {};
-            if (customerGroup) customerGroup.style.display = 'none';
-            if (phoneGroup) phoneGroup.style.display = 'none';
+            if (customerGroup) customerGroup.style.display = 'block';
+            if (phoneGroup) phoneGroup.style.display = 'block';
         } else {
             types = VBA_LICENSE_TYPES || {};
             if (customerGroup) customerGroup.style.display = 'none';
