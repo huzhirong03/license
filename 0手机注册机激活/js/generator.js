@@ -393,7 +393,25 @@ async function getQpActivation(machineCode) {
 async function upsertQpActivation(machineCode, licenseType, daysAdded, customerName, phone) {
     try {
         const oldRecord = await getQpActivation(machineCode);
-        const beijingTime = formatDateTime(getBeijingTime());
+        const now = getBeijingTime();
+        const beijingTime = formatDateTime(now);
+
+        const oldTotalDays = oldRecord?.total_days || 0;
+        const newTotalDays = oldTotalDays + daysAdded;
+
+        let expiresAt = null;
+        if (licenseType !== 'PERM' && daysAdded > 0) {
+            let baseTime = now;
+            if (oldRecord?.expires_at) {
+                const oldExpiry = new Date(oldRecord.expires_at);
+                if (oldExpiry > now) baseTime = oldExpiry;
+            }
+            if (licenseType === 'MINUTES' || licenseType === 'MINUTES_CUSTOM') {
+                expiresAt = formatDateTime(new Date(baseTime.getTime() + daysAdded * 60 * 1000));
+            } else {
+                expiresAt = formatDateTime(new Date(baseTime.getTime() + daysAdded * 24 * 60 * 60 * 1000));
+            }
+        }
 
         const data = {
             product_id: QUICKPAIBAN_PRODUCT_ID,
@@ -402,6 +420,9 @@ async function upsertQpActivation(machineCode, licenseType, daysAdded, customerN
             customer_name: customerName || '',
             phone: phone || '',
             activation_count: (oldRecord?.activation_count || 0) + 1,
+            total_days: newTotalDays,
+            activated_at: beijingTime,
+            expires_at: expiresAt,
             updated_at: beijingTime
         };
 
