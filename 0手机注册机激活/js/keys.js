@@ -32,9 +32,11 @@ const QUICKPAIBAN_LICENSE_TYPES = {
     'M001': { name: '1分钟(测试)', lt: 'M001', d: 1 }
 };
 
-// ==================== Supabase 配置（仅R2V使用）====================
+// ==================== Supabase 配置（R2V + QuickPaiban）====================
 const SUPABASE_URL = 'https://cdvoeabekfuujaehxocl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkdm9lYWJla2Z1dWphZWh4b2NsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxNjM3MDQsImV4cCI6MjA4MTczOTcwNH0.VrT3fJfKKXwwOF_dx1v_vMkNm1bXIEhhL_4iui0RKB8';
+const SUPABASE_TABLE_QP_ACTIVATIONS = 'activations_quickpaiban';
+const SUPABASE_TABLE_QP_HISTORY = 'activation_history_quickpaiban';
 
 // ==================== R2V 授权类型 ====================
 const R2V_LICENSE_TYPES = {

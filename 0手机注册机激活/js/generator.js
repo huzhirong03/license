@@ -368,6 +368,101 @@ async function addHistory(machineCode, customerName, licenseType, daysAdded, exp
     }
 }
 
+async function getQpActivation(machineCode) {
+    try {
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_QP_ACTIVATIONS}?machine_code=eq.${machineCode}&product_id=eq.${QUICKPAIBAN_PRODUCT_ID}&select=*`,
+            {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                }
+            }
+        );
+        if (response.ok) {
+            const data = await response.json();
+            return data.length > 0 ? data[0] : null;
+        }
+        return null;
+    } catch (error) {
+        console.error('QuickPaiban 查询失败:', error);
+        return null;
+    }
+}
+
+async function upsertQpActivation(machineCode, licenseType, daysAdded) {
+    try {
+        const oldRecord = await getQpActivation(machineCode);
+        const beijingTime = formatDateTime(getBeijingTime());
+
+        const data = {
+            product_id: QUICKPAIBAN_PRODUCT_ID,
+            machine_code: machineCode,
+            license_type: licenseType,
+            activation_count: (oldRecord?.activation_count || 0) + 1,
+            updated_at: beijingTime
+        };
+
+        let response;
+        if (oldRecord) {
+            response = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_QP_ACTIVATIONS}?machine_code=eq.${machineCode}&product_id=eq.${QUICKPAIBAN_PRODUCT_ID}`, {
+                method: 'PATCH',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+        } else {
+            data.created_at = beijingTime;
+            response = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_QP_ACTIVATIONS}`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+        }
+
+        if (response.ok) {
+            await addQpHistory(machineCode, licenseType, daysAdded);
+        }
+
+        return response.ok;
+    } catch (error) {
+        console.error('QuickPaiban 上传失败:', error);
+        return false;
+    }
+}
+
+async function addQpHistory(machineCode, licenseType, daysAdded) {
+    try {
+        const data = {
+            product_id: QUICKPAIBAN_PRODUCT_ID,
+            machine_code: machineCode,
+            license_type: licenseType,
+            days_added: daysAdded > 0 ? daysAdded : null,
+            activation_source: 'MOBILE_WEB',
+            remark: ''
+        };
+
+        await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_QP_HISTORY}`, {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+    } catch (error) {
+        console.error('QuickPaiban 历史记录失败:', error);
+    }
+}
+
 async function generateLicense() {
     try {
         const programCode = document.getElementById('programSelect').value;
@@ -465,7 +560,17 @@ async function generateLicense() {
                 `<strong>类型：</strong>${result.typeName}<br>` +
                 `<strong>有效期：</strong>${result.expiryInfo}<br>` +
                 `<span style="color: #3498db;">💡 生成格式：QPA1.payload.signature（RSA-SHA256）</span>`;
-            document.getElementById('cloudStatus').innerHTML = '';
+
+            document.getElementById('cloudStatus').innerHTML = '☁️ 正在同步到云端...';
+            const typeInfo = QUICKPAIBAN_LICENSE_TYPES[typeCode];
+            let daysVal = typeInfo ? typeInfo.d : 0;
+            if ((typeCode === 'DAYS_CUSTOM' || typeCode === 'MINUTES_CUSTOM') && customValue) {
+                daysVal = parseInt(customValue, 10) || 0;
+            }
+            const uploaded = await upsertQpActivation(machineCode, typeCode, daysVal);
+            document.getElementById('cloudStatus').innerHTML = uploaded
+                ? '✅ 已同步到云端'
+                : '⚠️ 云端同步失败（激活码仍然有效）';
 
         } else {
             const typeInfo = VBA_LICENSE_TYPES[typeCode];
