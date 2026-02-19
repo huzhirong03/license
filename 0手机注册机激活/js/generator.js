@@ -573,7 +573,7 @@ async function generateLicense() {
             if ((typeCode === 'DAYS_CUSTOM' || typeCode === 'MINUTES_CUSTOM') && customValue) {
                 daysVal = parseInt(customValue, 10) || 0;
             }
-            const uploaded = await upsertQpActivation(machineCode, typeCode, daysVal, qpCustomerName, qpPhone);
+            const uploaded = await upsertQpActivation(cleanCode, typeCode, daysVal, qpCustomerName, qpPhone);
             document.getElementById('cloudStatus').innerHTML = uploaded
                 ? '✅ 已同步到云端'
                 : '⚠️ 云端同步失败（激活码仍然有效）';
