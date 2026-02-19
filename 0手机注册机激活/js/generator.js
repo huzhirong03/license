@@ -390,7 +390,7 @@ async function getQpActivation(machineCode) {
     }
 }
 
-async function upsertQpActivation(machineCode, licenseType, daysAdded) {
+async function upsertQpActivation(machineCode, licenseType, daysAdded, customerName, phone) {
     try {
         const oldRecord = await getQpActivation(machineCode);
         const beijingTime = formatDateTime(getBeijingTime());
@@ -399,6 +399,8 @@ async function upsertQpActivation(machineCode, licenseType, daysAdded) {
             product_id: QUICKPAIBAN_PRODUCT_ID,
             machine_code: machineCode,
             license_type: licenseType,
+            customer_name: customerName || '',
+            phone: phone || '',
             activation_count: (oldRecord?.activation_count || 0) + 1,
             updated_at: beijingTime
         };
@@ -428,7 +430,7 @@ async function upsertQpActivation(machineCode, licenseType, daysAdded) {
         }
 
         if (response.ok) {
-            await addQpHistory(machineCode, licenseType, daysAdded);
+            await addQpHistory(machineCode, licenseType, daysAdded, customerName, phone);
         }
 
         return response.ok;
@@ -438,13 +440,15 @@ async function upsertQpActivation(machineCode, licenseType, daysAdded) {
     }
 }
 
-async function addQpHistory(machineCode, licenseType, daysAdded) {
+async function addQpHistory(machineCode, licenseType, daysAdded, customerName, phone) {
     try {
         const data = {
             product_id: QUICKPAIBAN_PRODUCT_ID,
             machine_code: machineCode,
             license_type: licenseType,
             days_added: daysAdded > 0 ? daysAdded : null,
+            customer_name: customerName || '',
+            phone: phone || '',
             activation_source: 'MOBILE_WEB',
             remark: ''
         };
@@ -562,12 +566,14 @@ async function generateLicense() {
                 `<span style="color: #3498db;">💡 生成格式：QPA1.payload.signature（RSA-SHA256）</span>`;
 
             document.getElementById('cloudStatus').innerHTML = '☁️ 正在同步到云端...';
+            const qpCustomerName = document.getElementById('customerName').value.trim();
+            const qpPhone = document.getElementById('phone').value.trim();
             const typeInfo = QUICKPAIBAN_LICENSE_TYPES[typeCode];
             let daysVal = typeInfo ? typeInfo.d : 0;
             if ((typeCode === 'DAYS_CUSTOM' || typeCode === 'MINUTES_CUSTOM') && customValue) {
                 daysVal = parseInt(customValue, 10) || 0;
             }
-            const uploaded = await upsertQpActivation(machineCode, typeCode, daysVal);
+            const uploaded = await upsertQpActivation(machineCode, typeCode, daysVal, qpCustomerName, qpPhone);
             document.getElementById('cloudStatus').innerHTML = uploaded
                 ? '✅ 已同步到云端'
                 : '⚠️ 云端同步失败（激活码仍然有效）';
